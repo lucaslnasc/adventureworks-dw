@@ -1,0 +1,195 @@
+{
+  "generated_at": "2026-09-12T18:41:56.838947+00:00",
+  "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+  "source_version": 0,
+  "checkpoint": 0,
+  "quality_row_counts": [
+    0,
+    0,
+    0
+  ],
+  "dimension_mismatches": {
+    "produto": 0,
+    "cliente": 0,
+    "territorio": 0,
+    "vendedor": 0
+  },
+  "fks": [
+    [
+      "fato_venda_canal_sk_fkey",
+      true
+    ],
+    [
+      "fato_venda_cliente_sk_fkey",
+      true
+    ],
+    [
+      "fato_venda_data_envio_sk_fkey",
+      true
+    ],
+    [
+      "fato_venda_data_pedido_sk_fkey",
+      true
+    ],
+    [
+      "fato_venda_data_vencimento_sk_fkey",
+      true
+    ],
+    [
+      "fato_venda_produto_sk_fkey",
+      true
+    ],
+    [
+      "fato_venda_territorio_sk_fkey",
+      true
+    ],
+    [
+      "fato_venda_vendedor_sk_fkey",
+      true
+    ]
+  ],
+  "audit": [
+    [
+      "2026-09-12 15:17:32.796260+00:00",
+      "2026-09-12 15:17:35.405951+00:00",
+      "success",
+      "initial",
+      null,
+      0,
+      {
+        "ct_keys": {},
+        "facts_deleted": 0,
+        "facts_written": 121317,
+        "facts_extracted": 121317,
+        "orders_affected": 31465,
+        "dimension_rows_written": {
+          "cliente": 19820,
+          "produto": 504,
+          "vendedor": 17,
+          "territorio": 10
+        },
+        "dimension_rows_extracted": {
+          "cliente": 19820,
+          "produto": 504,
+          "vendedor": 17,
+          "territorio": 10
+        }
+      },
+      null
+    ],
+    [
+      "2026-09-12 15:24:03.302565+00:00",
+      "2026-09-12 15:24:03.470119+00:00",
+      "failed",
+      "incremental",
+      0,
+      null,
+      null,
+      "OperationalError"
+    ],
+    [
+      "2026-09-12 15:24:19.289918+00:00",
+      "2026-09-12 15:24:19.331403+00:00",
+      "failed",
+      "incremental",
+      0,
+      null,
+      null,
+      "OperationalError"
+    ],
+    [
+      "2026-09-12 15:33:13.371409+00:00",
+      "2026-09-12 15:33:13.419739+00:00",
+      "failed",
+      "incremental",
+      0,
+      null,
+      null,
+      "OperationalError"
+    ],
+    [
+      "2026-09-12 15:33:56.346342+00:00",
+      "2026-09-12 15:33:56.391807+00:00",
+      "success",
+      "incremental",
+      0,
+      0,
+      {
+        "ct_keys": {
+          "store": 0,
+          "detail": 0,
+          "header": 0,
+          "person": 0,
+          "seller": 0,
+          "product": 0,
+          "category": 0,
+          "customer": 0,
+          "territory": 0,
+          "subcategory": 0
+        },
+        "facts_deleted": 0,
+        "facts_written": 0,
+        "facts_extracted": 0,
+        "orders_affected": 0,
+        "dimension_rows_written": {
+          "cliente": 0,
+          "produto": 0,
+          "vendedor": 0,
+          "territorio": 0
+        },
+        "dimension_rows_extracted": {
+          "cliente": 0,
+          "produto": 0,
+          "vendedor": 0,
+          "territorio": 0
+        }
+      },
+      null
+    ]
+  ],
+  "incremental_read": {
+    "facts": 0,
+    "orders": 0,
+    "dimensions": {
+      "produto": 0,
+      "cliente": 0,
+      "territorio": 0,
+      "vendedor": 0
+    },
+    "ct": {
+      "header": 0,
+      "detail": 0,
+      "product": 0,
+      "subcategory": 0,
+      "category": 0,
+      "customer": 0,
+      "person": 0,
+      "store": 0,
+      "territory": 0,
+      "seller": 0
+    }
+  },
+  "files_sha256": {
+    "etl\\evidence.py": "5412771ef1ab5fe58d26874d9ef1bc1bba2e79abe7a329feeb8755e5f6840453",
+    "etl\\pipeline.py": "4b7b5ba721fdb31c2afd9d70c1f51508d9e9be713efd75e67a55b8dc8e5867cb",
+    "etl\\setup.py": "2c0ba6b36731ede830ad3ae1794be6a5f8a4d74e1fd38c230795be941b46197e",
+    "etl\\source.py": "a8837af52e7bc437b65afd72056d3b05f8e18dace92353cdac981ad63076a556",
+    "etl\\target.py": "7e6e8d7b3cb303553417f8d51693b464cf53f7598d2c2f5507cce1ffc483be0e",
+    "etl\\transform.py": "04ded947fc7e7d1fe4e68901e176f0961c45f5251c7d3c6349875838657a23e7",
+    "etl\\__init__.py": "de61282fe690dd5bd97e858e5cc253e74b0d1888550d74a03cc775225e65ef2b",
+    "etl\\__main__.py": "7d480f4cf9920f5303ec92f5167508607903065014aed45f5bfd375ef52a27bb",
+    "tests\\fixtures.py": "b1510ef9d5f26e972e598ced5288f61d0fc4ff032e3bcb6c495d9aea732d4c96",
+    "tests\\sqlserver_fixture.sql": "a429d551d4a4485089992ea021be9500317d446da5ac39f04bedecdbffad32b6",
+    "tests\\test_postgres.py": "3614213a6251f114895af4a61a9b54de30d6609499606fdfbfaa26a361ab8c8f",
+    "tests\\test_sqlserver.py": "0cf9b0f59dcbe89227dc9b54e1812c8de0c66071b70bd8d388532feb197434a0",
+    "tests\\test_transform.py": "0025346e613b9977fce18915a9bf4a3f927c9a9c8aa2447bb5a991edc808a1b9",
+    "tests\\__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "sql\\postgres\\001_schema.sql": "0b076be01e7f21d2eb2c203790599fc8b0e991ad4e1b344af54cc0b268878dec",
+    "sql\\postgres\\002_kpis.sql": "d50a2bc0758406ff4f5a4b4f9d5a2c7485a34b746047dbb147ef62c1d3abf9ec",
+    "sql\\postgres\\003_comprovar_kpis.sql": "e4dc4717bccd12122cf19d39a81e8cb6fabcae9fa747b9de14b56028125c5aa7",
+    "sql\\postgres\\004_qualidade.sql": "223b45a2df3fbcf9efcbb72d8172d5a1edfa8357a491b9e8d8f0734ace8cf162",
+    "sql\\sqlserver\\001_change_tracking.sql": "26b960c4ae38e17b0b4420fee09fdfec1b1feedbdc80c9f7a0049dc525788d86",
+    "sql\\sqlserver\\002_analise_oltp.sql": "f2d5e87a6d00543d0beeba4d1506f9c782c6eaf27dfd9a5f400025f02b8b3fc2",
+    "sql\\sqlserver\\003_demo_incremental.sql": "38b879b0122a2b9271b3ad2049fdebb8500793878c44f615f9bcb1f1650a5574"
+  }
+}

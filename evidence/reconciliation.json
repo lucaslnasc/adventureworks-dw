@@ -1,0 +1,11 @@
+{
+  "gerado_em": "2026-09-12T21:50:32.377884+00:00",
+  "versao": 0,
+  "itens_origem": 121317,
+  "itens_dw": 121317,
+  "itens_divergentes": 0,
+  "amostra_chaves_divergentes": [],
+  "receita_origem_todos_status": "109846381.399888",
+  "receita_dw_todos_status": "109846381.39988800",
+  "resultado": "PASS"
+}

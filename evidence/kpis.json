@@ -1,0 +1,284 @@
+{
+  "gerado_em": "2026-09-12T21:50:36.151046+00:00",
+  "versao": 0,
+  "indicadores": {
+    "kpi_01_receita_bruta": [
+      {
+        "receita_bruta_um": "110373889.31340000"
+      }
+    ],
+    "kpi_02_descontos": [
+      {
+        "descontos_um": "527507.91351200"
+      }
+    ],
+    "kpi_03_receita_liquida": [
+      {
+        "receita_liquida_um": "109846381.39988800"
+      }
+    ],
+    "kpi_04_unidades": [
+      {
+        "unidades": 274914
+      }
+    ],
+    "kpi_05_pedidos": [
+      {
+        "pedidos": 31465
+      }
+    ],
+    "kpi_06_ticket_medio": [
+      {
+        "ticket_medio_um": "3491.0656729664071190"
+      }
+    ],
+    "kpi_07_taxa_desconto": [
+      {
+        "desconto_ponderado_pct": "0.47792817376777681849"
+      }
+    ],
+    "kpi_08_clientes_ativos": [
+      {
+        "clientes_com_compra": 19119
+      }
+    ],
+    "kpi_09_crescimento_mensal": [
+      {
+        "mes": "2011-05-01",
+        "receita": "503805.91690000",
+        "receita_anterior": null,
+        "crescimento_pct": null
+      },
+      {
+        "mes": "2011-06-01",
+        "receita": "458910.82480000",
+        "receita_anterior": "503805.91690000",
+        "crescimento_pct": "-8.9111879384519392"
+      },
+      {
+        "mes": "2011-07-01",
+        "receita": "2044600.00333800",
+        "receita_anterior": "458910.82480000",
+        "crescimento_pct": "345.5331826676928716"
+      },
+      {
+        "mes": "2011-08-01",
+        "receita": "2495816.73344600",
+        "receita_anterior": "2044600.00333800",
+        "crescimento_pct": "22.0687043613101168"
+      },
+      {
+        "mes": "2011-09-01",
+        "receita": "502073.84580000",
+        "receita_anterior": "2495816.73344600",
+        "crescimento_pct": "-79.8833849027535991"
+      },
+      {
+        "mes": "2011-10-01",
+        "receita": "4588761.81613000",
+        "receita_anterior": "502073.84580000",
+        "crescimento_pct": "813.9615326542866894"
+      },
+      {
+        "mes": "2011-11-01",
+        "receita": "737839.82140000",
+        "receita_anterior": "4588761.81613000",
+        "crescimento_pct": "-83.9207208618583716"
+      },
+      {
+        "mes": "2011-12-01",
+        "receita": "1309863.25114000",
+        "receita_anterior": "737839.82140000",
+        "crescimento_pct": "77.5267765644073165"
+      },
+      {
+        "mes": "2012-01-01",
+        "receita": "3970627.27895800",
+        "receita_anterior": "1309863.25114000",
+        "crescimento_pct": "203.1329625823370666"
+      },
+      {
+        "mes": "2012-02-01",
+        "receita": "1475426.90998000",
+        "receita_anterior": "3970627.27895800",
+        "crescimento_pct": "-62.8414654329581917"
+      },
+      {
+        "mes": "2012-03-01",
+        "receita": "2975748.23842800",
+        "receita_anterior": "1475426.90998000",
+        "crescimento_pct": "101.6872688372165758"
+      },
+      {
+        "mes": "2012-04-01",
+        "receita": "1634600.79833200",
+        "receita_anterior": "2975748.23842800",
+        "crescimento_pct": "-45.0692509123180604"
+      },
+      {
+        "mes": "2012-05-01",
+        "receita": "3074602.81353800",
+        "receita_anterior": "1634600.79833200",
+        "crescimento_pct": "88.0950270350672195"
+      },
+      {
+        "mes": "2012-06-01",
+        "receita": "4099354.35675100",
+        "receita_anterior": "3074602.81353800",
+        "crescimento_pct": "33.3295584945425917"
+      },
+      {
+        "mes": "2012-07-01",
+        "receita": "3417953.86957100",
+        "receita_anterior": "4099354.35675100",
+        "crescimento_pct": "-16.6221416320801645"
+      },
+      {
+        "mes": "2012-08-01",
+        "receita": "2175637.21772500",
+        "receita_anterior": "3417953.86957100",
+        "crescimento_pct": "-36.3467939958454661"
+      },
+      {
+        "mes": "2012-09-01",
+        "receita": "3454151.94048500",
+        "receita_anterior": "2175637.21772500",
+        "crescimento_pct": "58.7650694860288027"
+      },
+      {
+        "mes": "2012-10-01",
+        "receita": "2544091.10551700",
+        "receita_anterior": "3454151.94048500",
+        "crescimento_pct": "-26.3468674988343939"
+      },
+      {
+        "mes": "2012-11-01",
+        "receita": "1872701.97620600",
+        "receita_anterior": "2544091.10551700",
+        "crescimento_pct": "-26.3901370456056444"
+      },
+      {
+        "mes": "2012-12-01",
+        "receita": "2829404.81894300",
+        "receita_anterior": "1872701.97620600",
+        "crescimento_pct": "51.0867641991403156"
+      },
+      {
+        "mes": "2013-01-01",
+        "receita": "2087872.46250400",
+        "receita_anterior": "2829404.81894300",
+        "crescimento_pct": "-26.2080686183329286"
+      },
+      {
+        "mes": "2013-02-01",
+        "receita": "2316922.15148000",
+        "receita_anterior": "2087872.46250400",
+        "crescimento_pct": "10.9704827804136614"
+      },
+      {
+        "mes": "2013-03-01",
+        "receita": "3412068.96753500",
+        "receita_anterior": "2316922.15148000",
+        "crescimento_pct": "47.2673117374894873"
+      },
+      {
+        "mes": "2013-04-01",
+        "receita": "2532265.91239900",
+        "receita_anterior": "3412068.96753500",
+        "crescimento_pct": "-25.7850314136997361"
+      },
+      {
+        "mes": "2013-05-01",
+        "receita": "3245623.75447900",
+        "receita_anterior": "2532265.91239900",
+        "crescimento_pct": "28.1707319356593218"
+      },
+      {
+        "mes": "2013-06-01",
+        "receita": "5081069.13159600",
+        "receita_anterior": "3245623.75447900",
+        "crescimento_pct": "56.5513909178185919"
+      },
+      {
+        "mes": "2013-07-01",
+        "receita": "4896353.73779400",
+        "receita_anterior": "5081069.13159600",
+        "crescimento_pct": "-3.6353647041204413"
+      },
+      {
+        "mes": "2013-08-01",
+        "receita": "3333964.06755500",
+        "receita_anterior": "4896353.73779400",
+        "crescimento_pct": "-31.9092482673222465"
+      },
+      {
+        "mes": "2013-09-01",
+        "receita": "4532908.70530300",
+        "receita_anterior": "3333964.06755500",
+        "crescimento_pct": "35.9615344813016992"
+      },
+      {
+        "mes": "2013-10-01",
+        "receita": "4795813.28980200",
+        "receita_anterior": "4532908.70530300",
+        "crescimento_pct": "5.7999091001199918"
+      },
+      {
+        "mes": "2013-11-01",
+        "receita": "3312130.24558700",
+        "receita_anterior": "4795813.28980200",
+        "crescimento_pct": "-30.9370476821931355"
+      },
+      {
+        "mes": "2013-12-01",
+        "receita": "4075486.62560100",
+        "receita_anterior": "3312130.24558700",
+        "crescimento_pct": "23.0472935365714275"
+      },
+      {
+        "mes": "2014-01-01",
+        "receita": "4289817.95095300",
+        "receita_anterior": "4075486.62560100",
+        "crescimento_pct": "5.2590364057542010"
+      },
+      {
+        "mes": "2014-02-01",
+        "receita": "1337725.03560000",
+        "receita_anterior": "4289817.95095300",
+        "crescimento_pct": "-68.8162749353310179"
+      },
+      {
+        "mes": "2014-03-01",
+        "receita": "7217531.09197400",
+        "receita_anterior": "1337725.03560000",
+        "crescimento_pct": "439.5377151431402874"
+      },
+      {
+        "mes": "2014-04-01",
+        "receita": "1797173.92300000",
+        "receita_anterior": "7217531.09197400",
+        "crescimento_pct": "-75.0998797220495018"
+      },
+      {
+        "mes": "2014-05-01",
+        "receita": "5366674.96933800",
+        "receita_anterior": "1797173.92300000",
+        "crescimento_pct": "198.6174515808395691"
+      },
+      {
+        "mes": "2014-06-01",
+        "receita": "49005.84000000",
+        "receita_anterior": "5366674.96933800",
+        "crescimento_pct": "-99.0868491145823005"
+      }
+    ],
+    "kpi_10_expedicao_no_prazo": [
+      {
+        "pedidos_com_data": 31465,
+        "pedidos_sem_data": 0,
+        "pedidos_no_prazo": 31465,
+        "expedicao_no_prazo_pct": "100.0000000000000000"
+      }
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- Python local Windows
+rootdir: pasta isolada de revisão
+collecting ... collected 28 items
+
+tests/test_postgres.py::test_all_ten_kpis_and_missing_month PASSED       [  3%]
+tests/test_postgres.py::test_idempotence_and_noop PASSED                 [  7%]
+tests/test_postgres.py::test_insert_update_and_delete PASSED             [ 10%]
+tests/test_postgres.py::test_header_change_updates_all_order_items PASSED [ 14%]
+tests/test_postgres.py::test_scd1_preserves_surrogate_keys PASSED        [ 17%]
+tests/test_postgres.py::test_atomic_rollback_and_recovery PASSED         [ 21%]
+tests/test_postgres.py::test_invalid_dimension_rolls_back PASSED         [ 25%]
+tests/test_postgres.py::test_full_resync_removes_stale_facts_keeps_keys PASSED [ 28%]
+tests/test_postgres.py::test_audit_failure_and_retry PASSED              [ 32%]
+tests/test_postgres.py::test_concurrent_run_refused PASSED               [ 35%]
+tests/test_postgres.py::test_empty_denominators PASSED                   [ 39%]
+tests/test_postgres.py::test_missing_shipping_date_is_visible PASSED     [ 42%]
+tests/test_sqlserver.py::test_incremental_snapshot_empty_changed_and_deleted_orders PASSED [ 46%]
+tests/test_sqlserver.py::test_actual_change_tracking_end_to_end PASSED   [ 50%]
+tests/test_sqlserver.py::test_commit_during_snapshot_is_loaded_next_time PASSED [ 53%]
+tests/test_transform.py::test_money_and_dates PASSED                     [ 57%]
+tests/test_transform.py::test_bad_data_rejected[quantidade-0] PASSED     [ 60%]
+tests/test_transform.py::test_bad_data_rejected[preco_unitario-value1] PASSED [ 64%]
+tests/test_transform.py::test_bad_data_rejected[taxa_desconto-value2] PASSED [ 67%]
+tests/test_transform.py::test_bad_data_rejected[receita_liquida-value3] PASSED [ 71%]
+tests/test_transform.py::test_bad_data_rejected[status-9] PASSED         [ 75%]
+tests/test_transform.py::test_bad_data_rejected[data_envio-value5] PASSED [ 78%]
+tests/test_transform.py::test_bad_data_rejected[data_vencimento-value6] PASSED [ 82%]
+tests/test_transform.py::test_invalid_checkpoints[4-8-minimums0] PASSED  [ 85%]
+tests/test_transform.py::test_invalid_checkpoints[9-8-minimums1] PASSED  [ 89%]
+tests/test_transform.py::test_invalid_checkpoints[1-None-minimums2] PASSED [ 92%]
+tests/test_transform.py::test_invalid_checkpoints[1-3-minimums3] PASSED  [ 96%]
+tests/test_transform.py::test_valid_checkpoint_boundary PASSED           [100%]
+
+- Relatório XML local gerado durante a revisão -
+============================= 28 passed in 9.90s ==============================
+

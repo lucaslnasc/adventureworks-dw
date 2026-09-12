@@ -1,0 +1,76 @@
+{
+  "version": [
+    {
+      "version": "Microsoft SQL Server 2022 (RTM-CU26-GDR) (KB5122768) - 16.0.4275.2 (X64) \n\tAug 20 2026 00:33:45 \n\tCopyright (C) 2022 Microsoft Corporation\n\tDeveloper Edition (64-bit) on Linux (Ubuntu 22.04.5 LTS) <X64>"
+    }
+  ],
+  "state": [
+    {
+      "name": "AdventureWorks2016",
+      "state_desc": "ONLINE",
+      "snapshot_isolation_state_desc": "ON"
+    }
+  ],
+  "ct": [
+    {
+      "retention_period": 7,
+      "retention_period_units_desc": "DAYS",
+      "is_auto_cleanup_on": 1
+    }
+  ],
+  "ct_tables": [
+    {
+      "table_name": "Person.Person",
+      "begin_version": 0
+    },
+    {
+      "table_name": "Production.Product",
+      "begin_version": 0
+    },
+    {
+      "table_name": "Production.ProductCategory",
+      "begin_version": 0
+    },
+    {
+      "table_name": "Production.ProductSubcategory",
+      "begin_version": 0
+    },
+    {
+      "table_name": "Sales.Customer",
+      "begin_version": 0
+    },
+    {
+      "table_name": "Sales.SalesOrderDetail",
+      "begin_version": 0
+    },
+    {
+      "table_name": "Sales.SalesOrderHeader",
+      "begin_version": 0
+    },
+    {
+      "table_name": "Sales.SalesPerson",
+      "begin_version": 0
+    },
+    {
+      "table_name": "Sales.SalesTerritory",
+      "begin_version": 0
+    },
+    {
+      "table_name": "Sales.Store",
+      "begin_version": 0
+    }
+  ],
+  "profile": [
+    {
+      "Status": 5,
+      "pedidos": 31465,
+      "primeira_data": "2011-05-31 00:00:00",
+      "ultima_data": "2014-06-30 00:00:00",
+      "sem_data_envio": 0,
+      "com_referencia_cambio": 13976
+    }
+  ],
+  "backup_present": true,
+  "backup_bytes": 48749568,
+  "backup_sha256": "e67fc550d4edd762b8f56c6904a68f5f552224fc375f65768eecc3a47e986315"
+}

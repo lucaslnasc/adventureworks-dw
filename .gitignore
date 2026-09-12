@@ -1,0 +1,71 @@
+# Credenciais e configuracao local (somente o modelo vazio e publicado)
+.env
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python, testes e ambientes locais
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+*.egg-info/
+
+# Backups e arquivos de bancos; manter apenas a pasta de download
+/backups/*
+!/backups/.gitkeep
+*.bak
+*.partial
+*.dump
+*.backup
+*.mdf
+*.ndf
+*.ldf
+*.db
+*.sqlite
+*.sqlite3
+
+# Evidencias geradas; publicar apenas as evidencias verificadas do artigo
+/evidence/*
+!/evidence/README.md
+!/evidence/RESULTADOS.md
+!/evidence/reconciliation.json
+!/evidence/kpis.json
+!/evidence/validacao.json
+!/evidence/origem.json
+!/evidence/catalogo_colunas.json
+!/evidence/testes.txt
+
+# Apoio da instalacao local, sem papel na execucao do projeto
+/apoio-interno/
+/scripts/concluir_ajustes.ps1
+/scripts/finalizar_git.ps1
+
+# Editor, sistema operacional, previews e arquivos temporarios
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+~$*
+*.swp
+*.swo
+*.tmp
+*.log
+*.zip
+*.7z
+*.tar
+*.tar.gz
+.article-preview/

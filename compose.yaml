@@ -1,0 +1,50 @@
+name: adventureworks-olap
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-adventureworks_dw}
+      POSTGRES_USER: ${PGUSER:-dw}
+      POSTGRES_PASSWORD: ${PGPASSWORD:?Copie .env.example para .env}
+    ports:
+      - "127.0.0.1:${PGPORT_EXTERNAL:-54330}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/postgres:/scripts:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Copie .env.example para .env}
+    ports:
+      - "127.0.0.1:${MSSQL_PORT:-14330}:1433"
+    volumes:
+      - mssqldata:/var/opt/mssql
+      - ./backups:/var/opt/mssql/backup:ro
+    healthcheck:
+      test: ["CMD-SHELL", "SQLCMDPASSWORD=$$MSSQL_SA_PASSWORD /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q 'SELECT 1' > /dev/null"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 30
+  etl:
+    build: .
+    env_file: .env
+    volumes:
+      - ./evidence:/app/evidence
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sqlserver:
+        condition: service_healthy
+    profiles: [tools]
+volumes:
+  pgdata:
+  mssqldata:

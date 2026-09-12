@@ -1,0 +1,5 @@
+# Versões diretas efetivamente importadas/usadas na validação Windows/Python 3.12.
+# Use este arquivo para repetir essas versões; CT ainda requer validação SQL Server.
+psycopg[binary]==3.3.5
+pymssql==2.4.1
+pytest==9.1.1

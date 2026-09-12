@@ -1,0 +1,76 @@
+@startuml
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam backgroundColor white
+entity "dim_data" as data {
+ * data_sk : integer <<PK>>
+ --
+ data : date <<UK>>
+ ano, trimestre, mes, dia
+ dia_semana_iso, inicio_mes
+}
+entity "dim_produto" as produto {
+ * produto_sk : bigint <<PK>>
+ --
+ produto_id : integer <<UK>>
+ nome, numero_produto, cor
+ subcategoria, categoria
+ ativo_origem, atualizado_em
+}
+entity "dim_cliente" as cliente {
+ * cliente_sk : bigint <<PK>>
+ --
+ cliente_id : integer <<UK>>
+ nome, tipo
+ ativo_origem, atualizado_em
+}
+entity "dim_territorio" as territorio {
+ * territorio_sk : bigint <<PK>>
+ --
+ territorio_id : integer <<UK>>
+ nome, pais_codigo, grupo
+ ativo_origem, atualizado_em
+}
+entity "dim_vendedor" as vendedor {
+ * vendedor_sk : bigint <<PK>>
+ --
+ vendedor_id : integer <<UK>>
+ nome
+ ativo_origem, atualizado_em
+}
+entity "dim_canal" as canal {
+ * canal_sk : smallint <<PK>>
+ --
+ nome : text <<UK>>
+}
+entity "fato_venda" as fato {
+ * pedido_id : integer <<PK>>
+ * item_id : integer <<PK>>
+ --
+ data_pedido_sk : integer <<FK>>
+ data_vencimento_sk : integer <<FK>>
+ data_envio_sk : integer <<FK nullable>>
+ produto_sk, cliente_sk : bigint <<FK>>
+ territorio_sk, vendedor_sk : bigint <<FK>>
+ canal_sk : smallint <<FK>>
+ status, quantidade
+ preco_unitario, taxa_desconto
+ receita_bruta, valor_desconto
+ receita_liquida
+ versao_origem, carregado_em
+}
+data ||--o{ fato : pedido
+data ||--o{ fato : vencimento
+data |o--o{ fato : envio opcional
+produto ||--o{ fato
+cliente ||--o{ fato
+territorio ||--o{ fato
+vendedor ||--o{ fato
+canal ||--o{ fato
+note bottom of fato
+  Grão: um item de pedido no estado atual
+  PK composta pedido_id + item_id
+  Não há relacionamentos entre dimensões
+end note
+@enduml
