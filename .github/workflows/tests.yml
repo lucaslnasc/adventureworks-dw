@@ -1,8 +1,13 @@
 name: Tests
 on: [push, pull_request]
+
+permissions:
+  contents: read
+
 jobs:
   postgres-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:17
@@ -14,6 +19,19 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U dw_test -d test_aw_dw"
           --health-interval 5s --health-timeout 5s --health-retries 20
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: Developer
+          # Credencial exclusiva do container descartavel de CI.
+          MSSQL_SA_PASSWORD: AwCiSql2026_Test!
+          SQLCMDPASSWORD: AwCiSql2026_Test!
+        ports: ["1433:1433"]
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q 'SELECT 1'"
+          --health-start-period 30s --health-interval 10s
+          --health-timeout 5s --health-retries 30
     env:
       PGHOST: localhost
       PGPORT: 5432
@@ -21,10 +39,28 @@ jobs:
       PGPASSWORD: ci_test_only
       PGDATABASE: test_aw_dw
       DW_TEST_DATABASE: test_aw_dw
+      RUN_SQLSERVER_TESTS: "1"
+      SOURCE_HOST: localhost
+      SOURCE_PORT: 1433
+      SOURCE_USER: sa
+      SOURCE_DB: master
+      MSSQL_SA_PASSWORD: AwCiSql2026_Test!
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - run: pip install -r requirements.txt
-      - run: python -m pytest -q
+      - run: python -m pip install -r requirements.txt
+      - name: Executar todos os testes com PostgreSQL e SQL Server
+        run: python -m pytest -q -ra --junitxml=test-results.xml
+      - name: Confirmar que nenhum teste foi ignorado
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse("test-results.xml").getroot()
+          cases = list(root.iter("testcase"))
+          skipped = [case for case in cases if case.find("skipped") is not None]
+          if not cases or skipped:
+              raise SystemExit(f"Suite incompleta: {len(cases)} testes, {len(skipped)} ignorados")
+          print(f"Suite completa: {len(cases)} testes, nenhum ignorado")
+          PY
