@@ -1,0 +1,100 @@
+@startuml modelo_estrela
+' Modelo estrela do DW AdventureWorks (esquema dw no PostgreSQL).
+' Gerar imagem: docker run --rm -v "${PWD}/docs:/data" plantuml/plantuml -tpng /data/modelo_estrela.puml -o /data/img
+skinparam linetype ortho
+skinparam shadowing false
+skinparam dpi 160
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  HeaderBackgroundColor #DDE7F3
+}
+hide circle
+hide methods
+
+class "dw.fato_venda" as fato #FFF4D6 {
+  <b>PK pedido_id</b> : integer
+  <b>PK item_id</b> : integer
+  FK data_pedido_sk : integer
+  FK data_vencimento_sk : integer
+  FK data_envio_sk : integer
+  FK produto_sk : bigint
+  FK cliente_sk : bigint
+  FK territorio_sk : bigint
+  FK vendedor_sk : bigint
+  FK canal_sk : smallint
+  status : smallint
+  quantidade : integer
+  preco_unitario : numeric[19,4]
+  taxa_desconto : numeric[9,4]
+  receita_liquida : numeric[28,8]
+  receita_bruta : numeric [gerada]
+  valor_desconto : numeric [gerada]
+  versao_origem : bigint
+  carregado_em : timestamptz
+}
+
+class "dw.dim_data" as data {
+  <b>PK data_sk</b> : integer [AAAAMMDD]
+  data : date
+  ano : smallint
+  trimestre : smallint
+  mes : smallint
+  dia : smallint
+  dia_semana_iso : smallint
+  inicio_mes : date
+}
+
+class "dw.dim_produto" as produto {
+  <b>PK produto_sk</b> : bigint
+  produto_id : integer [NK]
+  nome : text
+  numero_produto : text
+  cor : text
+  subcategoria : text
+  categoria : text
+  ativo_origem : boolean
+  atualizado_em : timestamptz
+}
+
+class "dw.dim_cliente" as cliente {
+  <b>PK cliente_sk</b> : bigint
+  cliente_id : integer [NK]
+  nome : text
+  tipo : text
+  ativo_origem : boolean
+  atualizado_em : timestamptz
+}
+
+class "dw.dim_territorio" as territorio {
+  <b>PK territorio_sk</b> : bigint
+  territorio_id : integer [NK]
+  nome : text
+  pais_codigo : text
+  grupo : text
+  ativo_origem : boolean
+  atualizado_em : timestamptz
+}
+
+class "dw.dim_vendedor" as vendedor {
+  <b>PK vendedor_sk</b> : bigint
+  vendedor_id : integer [NK]
+  nome : text
+  ativo_origem : boolean
+  atualizado_em : timestamptz
+}
+
+class "dw.dim_canal" as canal {
+  <b>PK canal_sk</b> : smallint
+  nome : text
+}
+
+data "1" -- "N" fato : pedido /\nvencimento /\nenvio
+produto "1" -- "N" fato
+cliente "1" -- "N" fato
+fato "N" -- "1" territorio
+fato "N" -- "1" vendedor
+fato "N" -- "1" canal
+@enduml
