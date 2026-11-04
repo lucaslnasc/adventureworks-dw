@@ -1,0 +1,12 @@
+# Mantém configurações locais fora de novos commits; não remove arquivos já versionados.
+.env
+.env.*
+# O modelo de configuração é a exceção permitida para documentação.
+!.env.example
+# Artefatos gerados pelo Python não fazem parte do código-fonte.
+__pycache__/
+*.pyc
+# Saídas locais e backups volumosos ou incompletos ficam fora do versionamento.
+saidas/
+/backups/*.bak
+/backups/*.partial

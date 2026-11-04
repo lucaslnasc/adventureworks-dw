@@ -1,0 +1,4 @@
+# Driver PostgreSQL com binários; versões fixadas ajudam a reproduzir o ambiente.
+psycopg[binary]==3.3.5
+# Driver utilizado para ler SQL Server e executar a preparação explícita da origem.
+pymssql==2.4.1

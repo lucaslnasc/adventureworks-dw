@@ -1,0 +1,11 @@
+# Exclui tudo do contexto de build e libera abaixo apenas arquivos necessários à imagem.
+**
+# O prefixo ! inclui novamente; .env e backups continuam fora do contexto enviado.
+!requirements.txt
+!etl/
+!etl/*.py
+!iniciar_airflow.py
+!dags/
+!dags/*.py
+!sql/
+!sql/*.sql

@@ -1,0 +1,128 @@
+# Identifica o projeto Compose e o prefixo dos recursos criados por ele.
+name: adventureworks-simples
+
+# As duas formas de executar o ETL recebem a mesma configuração.
+# Âncora YAML reutilizada na CLI e no Airflow; nomes dos serviços resolvem na rede interna.
+x-etl-env: &etl-env
+  SOURCE_HOST: sqlserver
+  SOURCE_PORT: "1433"
+  SOURCE_DB: ${SOURCE_DB:-AdventureWorks2016}
+  SOURCE_USER: ${SOURCE_USER:-sa}
+  # A sintaxe :? exige configuração; segredos vêm do ambiente ou do .env local.
+  MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Preencha MSSQL_SA_PASSWORD no .env}
+  PGHOST: postgres
+  PGPORT: "5432"
+  PGDATABASE: ${PGDATABASE:-adventureworks_dw}
+  PGUSER: ${PGUSER:-dw}
+  PGPASSWORD: ${PGPASSWORD:?Preencha PGPASSWORD no .env}
+
+services:
+  # Origem transacional. O backup é montado somente para leitura (:ro).
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Preencha MSSQL_SA_PASSWORD no .env}
+    # Porta externa é para o computador; entre contêineres usa-se sqlserver:1433.
+    ports:
+      - "127.0.0.1:${MSSQL_PORT:-14331}:1433"
+    volumes:
+      - origem:/var/opt/mssql
+      - ${BACKUP_DIR:-./backups}:/var/opt/mssql/backup:ro
+    # Testa uma consulta simples; não comprova que o AdventureWorks foi restaurado.
+    healthcheck:
+      test: ["CMD-SHELL", "SQLCMDPASSWORD=$$MSSQL_SA_PASSWORD /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q 'SELECT 1' > /dev/null"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  # Destino do DW; o volume preserva os dados quando o contêiner é recriado.
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-adventureworks_dw}
+      POSTGRES_USER: ${PGUSER:-dw}
+      POSTGRES_PASSWORD: ${PGPASSWORD:?Preencha PGPASSWORD no .env}
+    ports:
+      - "127.0.0.1:${PGPORT_EXTERNAL:-54331}:5432"
+    volumes:
+      - destino:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Ferramenta de execução sob demanda, habilitada pelo perfil tools.
+  etl:
+    build:
+      context: .
+      target: cli
+    environment: *etl-env
+    profiles: [tools]
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # Metadados do Airflow ficam separados dos dados analíticos do DW.
+  airflow-db:
+    image: postgres:17
+    profiles: [airflow]
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:?Preencha AIRFLOW_DB_PASSWORD no .env}
+    volumes:
+      - metadados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # O perfil airflow habilita a orquestração e seu banco de metadados.
+  airflow:
+    build:
+      context: .
+      target: airflow
+    profiles: [airflow]
+    environment:
+      <<: *etl-env
+      AIRFLOW_DB_PASSWORD: ${AIRFLOW_DB_PASSWORD:?Preencha AIRFLOW_DB_PASSWORD no .env}
+      AIRFLOW_USER: ${AIRFLOW_USER:?Preencha AIRFLOW_USER no .env}
+      AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:?Preencha AIRFLOW_PASSWORD no .env}
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__DAGS_FOLDER: /app/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      # Limita tarefas concorrentes; a configuração da DAG também governa suas execuções.
+      AIRFLOW__CORE__PARALLELISM: "1"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "${AIRFLOW_USER:?Preencha AIRFLOW_USER no .env}:admin"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/simple_auth_manager_passwords.json
+      AIRFLOW__DAG_PROCESSOR__PARSING_PROCESSES: "1"
+      AIRFLOW__API__WORKERS: "1"
+      AIRFLOW__LOGGING__LOGGING_LEVEL: WARNING
+    # Interface acessível apenas localmente pela porta externa configurada.
+    ports:
+      - "127.0.0.1:${AIRFLOW_PORT:-8081}:8080"
+    volumes:
+      - airflow:/opt/airflow
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+      sqlserver:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+# O nome deste projeto mantém esses volumes separados dos anteriores.
+# Volumes nomeados guardam origem, DW, metadados e arquivos persistentes do Airflow.
+volumes:
+  origem:
+  destino:
+  metadados:
+  airflow:
