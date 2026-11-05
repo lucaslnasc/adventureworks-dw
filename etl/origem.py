@@ -1,99 +1,158 @@
-"""Leitura consistente do AdventureWorks e das alterações de Change Tracking."""
+"""Leitura do AdventureWorks por grupo, usando Change Tracking e isolamento snapshot.
+
+Esta é a única parte do pipeline que acessa o banco de produção. Cada grupo lê só as
+chaves alteradas desde o seu checkpoint (buscas por chave primária) e devolve as linhas
+no formato da stage. Nenhuma regra de negócio é aplicada aqui.
+"""
 
 from contextlib import contextmanager
 import os
 
 import pymssql
 
-# Chaves das dez tabelas que podem alterar fatos ou atributos dimensionais.
-TABELAS = {
-    "pedido": ("Sales.SalesOrderHeader", "SalesOrderID"),
-    "item": ("Sales.SalesOrderDetail", "SalesOrderID, SalesOrderDetailID"),
-    "produto": ("Production.Product", "ProductID"),
-    "subcategoria": ("Production.ProductSubcategory", "ProductSubcategoryID"),
-    "categoria": ("Production.ProductCategory", "ProductCategoryID"),
-    "cliente": ("Sales.Customer", "CustomerID"),
-    "pessoa": ("Person.Person", "BusinessEntityID"),
-    "loja": ("Sales.Store", "BusinessEntityID"),
-    "territorio": ("Sales.SalesTerritory", "TerritoryID"),
-    "vendedor": ("Sales.SalesPerson", "BusinessEntityID"),
+# Cada grupo tem: as tabelas monitoradas, as chaves afetadas (carga completa ou
+# incremental) e a consulta que monta as linhas de cada tabela da stage.
+# %(versao)s é o checkpoint do grupo. Na consulta de dados, a linha ausente na
+# origem (LEFT JOIN nulo) é uma exclusão: operacao = 'D'.
+GRUPOS = {
+    "produto": {
+        "tabelas": ("Production.Product", "Production.ProductSubcategory", "Production.ProductCategory"),
+        "chaves": [(
+            "chaves", "id",
+            "SELECT ProductID id, 'I' op FROM Production.Product",
+            """SELECT ct.ProductID id, ct.SYS_CHANGE_OPERATION op
+               FROM CHANGETABLE(CHANGES Production.Product, %(versao)s) ct
+               UNION ALL
+               SELECT p.ProductID, 'U' FROM Production.Product p
+               JOIN CHANGETABLE(CHANGES Production.ProductSubcategory, %(versao)s) ct
+                 ON ct.ProductSubcategoryID = p.ProductSubcategoryID
+               UNION ALL
+               SELECT p.ProductID, 'U' FROM Production.Product p
+               JOIN Production.ProductSubcategory s ON s.ProductSubcategoryID = p.ProductSubcategoryID
+               JOIN CHANGETABLE(CHANGES Production.ProductCategory, %(versao)s) ct
+                 ON ct.ProductCategoryID = s.ProductCategoryID""",
+        )],
+        "stage": {
+            "produto": """
+                SELECT CASE WHEN p.ProductID IS NULL THEN 'D' WHEN k.op = 'I' THEN 'I' ELSE 'U' END operacao,
+                       k.id product_id, p.Name name, p.ProductNumber product_number, p.Color color,
+                       s.Name subcategoria, c.Name categoria
+                FROM #chaves k
+                LEFT JOIN Production.Product p ON p.ProductID = k.id
+                LEFT JOIN Production.ProductSubcategory s ON s.ProductSubcategoryID = p.ProductSubcategoryID
+                LEFT JOIN Production.ProductCategory c ON c.ProductCategoryID = s.ProductCategoryID""",
+        },
+    },
+    "cliente": {
+        "tabelas": ("Sales.Customer", "Person.Person", "Sales.Store"),
+        "chaves": [(
+            "chaves", "id",
+            "SELECT CustomerID id, 'I' op FROM Sales.Customer",
+            """SELECT ct.CustomerID id, ct.SYS_CHANGE_OPERATION op
+               FROM CHANGETABLE(CHANGES Sales.Customer, %(versao)s) ct
+               UNION ALL
+               SELECT c.CustomerID, 'U' FROM Sales.Customer c
+               JOIN CHANGETABLE(CHANGES Person.Person, %(versao)s) ct ON ct.BusinessEntityID = c.PersonID
+               UNION ALL
+               SELECT c.CustomerID, 'U' FROM Sales.Customer c
+               JOIN CHANGETABLE(CHANGES Sales.Store, %(versao)s) ct ON ct.BusinessEntityID = c.StoreID""",
+        )],
+        "stage": {
+            "cliente": """
+                SELECT CASE WHEN c.CustomerID IS NULL THEN 'D' WHEN k.op = 'I' THEN 'I' ELSE 'U' END operacao,
+                       k.id customer_id, c.PersonID person_id, c.StoreID store_id,
+                       p.FirstName first_name, p.MiddleName middle_name, p.LastName last_name,
+                       s.Name store_name
+                FROM #chaves k
+                LEFT JOIN Sales.Customer c ON c.CustomerID = k.id
+                LEFT JOIN Person.Person p ON p.BusinessEntityID = c.PersonID
+                LEFT JOIN Sales.Store s ON s.BusinessEntityID = c.StoreID""",
+        },
+    },
+    "territorio": {
+        "tabelas": ("Sales.SalesTerritory",),
+        "chaves": [(
+            "chaves", "id",
+            "SELECT TerritoryID id, 'I' op FROM Sales.SalesTerritory",
+            """SELECT ct.TerritoryID id, ct.SYS_CHANGE_OPERATION op
+               FROM CHANGETABLE(CHANGES Sales.SalesTerritory, %(versao)s) ct""",
+        )],
+        "stage": {
+            "territorio": """
+                SELECT CASE WHEN t.TerritoryID IS NULL THEN 'D' WHEN k.op = 'I' THEN 'I' ELSE 'U' END operacao,
+                       k.id territory_id, t.Name name, t.CountryRegionCode country_region_code,
+                       t.[Group] grupo
+                FROM #chaves k
+                LEFT JOIN Sales.SalesTerritory t ON t.TerritoryID = k.id""",
+        },
+    },
+    "vendedor": {
+        "tabelas": ("Sales.SalesPerson", "Person.Person"),
+        "chaves": [(
+            "chaves", "id",
+            "SELECT BusinessEntityID id, 'I' op FROM Sales.SalesPerson",
+            """SELECT ct.BusinessEntityID id, ct.SYS_CHANGE_OPERATION op
+               FROM CHANGETABLE(CHANGES Sales.SalesPerson, %(versao)s) ct
+               UNION ALL
+               SELECT s.BusinessEntityID, 'U' FROM Sales.SalesPerson s
+               JOIN CHANGETABLE(CHANGES Person.Person, %(versao)s) ct
+                 ON ct.BusinessEntityID = s.BusinessEntityID""",
+        )],
+        "stage": {
+            "vendedor": """
+                SELECT CASE WHEN s.BusinessEntityID IS NULL THEN 'D' WHEN k.op = 'I' THEN 'I' ELSE 'U' END operacao,
+                       k.id business_entity_id, p.FirstName first_name, p.MiddleName middle_name,
+                       p.LastName last_name
+                FROM #chaves k
+                LEFT JOIN Sales.SalesPerson s ON s.BusinessEntityID = k.id
+                LEFT JOIN Person.Person p ON p.BusinessEntityID = s.BusinessEntityID""",
+        },
+    },
+    # Cabeçalho e itens ficam no mesmo grupo (mesmo snapshot): todo item alterado
+    # chega à stage junto com o cabeçalho atual do seu pedido.
+    "vendas": {
+        "tabelas": ("Sales.SalesOrderHeader", "Sales.SalesOrderDetail"),
+        "chaves": [
+            (
+                "itens", "pedido, item",
+                "SELECT SalesOrderID pedido, SalesOrderDetailID item, 'I' op FROM Sales.SalesOrderDetail",
+                """SELECT ct.SalesOrderID pedido, ct.SalesOrderDetailID item, ct.SYS_CHANGE_OPERATION op
+                   FROM CHANGETABLE(CHANGES Sales.SalesOrderDetail, %(versao)s) ct""",
+            ),
+            (
+                "pedidos", "id",
+                "SELECT SalesOrderID id, 'I' op FROM Sales.SalesOrderHeader",
+                """SELECT ct.SalesOrderID id, ct.SYS_CHANGE_OPERATION op
+                   FROM CHANGETABLE(CHANGES Sales.SalesOrderHeader, %(versao)s) ct
+                   UNION ALL
+                   SELECT pedido, 'U' FROM #itens""",
+            ),
+        ],
+        "stage": {
+            "pedido": """
+                SELECT CASE WHEN h.SalesOrderID IS NULL THEN 'D' WHEN k.op = 'I' THEN 'I' ELSE 'U' END operacao,
+                       k.id sales_order_id, CAST(h.OrderDate AS date) order_date,
+                       CAST(h.DueDate AS date) due_date, CAST(h.ShipDate AS date) ship_date,
+                       h.CustomerID customer_id, h.TerritoryID territory_id,
+                       h.SalesPersonID sales_person_id, h.OnlineOrderFlag online_order_flag, h.Status status
+                FROM #pedidos k
+                LEFT JOIN Sales.SalesOrderHeader h ON h.SalesOrderID = k.id""",
+            "item": """
+                SELECT CASE WHEN d.SalesOrderDetailID IS NULL THEN 'D' WHEN k.op = 'I' THEN 'I' ELSE 'U' END operacao,
+                       k.pedido sales_order_id, k.item sales_order_detail_id, d.ProductID product_id,
+                       d.OrderQty order_qty, d.UnitPrice unit_price,
+                       d.UnitPriceDiscount unit_price_discount, d.LineTotal line_total
+                FROM #itens k
+                LEFT JOIN Sales.SalesOrderDetail d
+                  ON d.SalesOrderID = k.pedido AND d.SalesOrderDetailID = k.item""",
+        },
+    },
 }
-
-# Cada consulta entrega uma dimensão já achatada, sem relações entre dimensões.
-DIMENSOES = {
-    "produto": """
-        SELECT p.ProductID produto_id, p.Name nome, p.ProductNumber numero_produto,
-               p.Color cor, COALESCE(s.Name, N'Sem subcategoria') subcategoria,
-               COALESCE(c.Name, N'Sem categoria') categoria
-        FROM Production.Product p
-        LEFT JOIN Production.ProductSubcategory s ON s.ProductSubcategoryID=p.ProductSubcategoryID
-        LEFT JOIN Production.ProductCategory c ON c.ProductCategoryID=s.ProductCategoryID
-    """,
-    "cliente": """
-        SELECT c.CustomerID cliente_id,
-               COALESCE(s.Name, NULLIF(LTRIM(RTRIM(CONCAT(p.FirstName,N' ',p.MiddleName,N' ',p.LastName))),N''), N'Não informado') nome,
-               CASE WHEN c.StoreID IS NOT NULL THEN N'Loja'
-                    WHEN c.PersonID IS NOT NULL THEN N'Pessoa' ELSE N'Não informado' END tipo
-        FROM Sales.Customer c
-        LEFT JOIN Person.Person p ON p.BusinessEntityID=c.PersonID
-        LEFT JOIN Sales.Store s ON s.BusinessEntityID=c.StoreID
-    """,
-    "territorio": """
-        SELECT TerritoryID territorio_id, Name nome, CountryRegionCode pais_codigo,
-               [Group] grupo FROM Sales.SalesTerritory
-    """,
-    "vendedor": """
-        SELECT s.BusinessEntityID vendedor_id,
-               LTRIM(RTRIM(CONCAT(p.FirstName,N' ',p.MiddleName,N' ',p.LastName))) nome
-        FROM Sales.SalesPerson s JOIN Person.Person p ON p.BusinessEntityID=s.BusinessEntityID
-    """,
-}
-
-# Mudanças em categoria, pessoa ou loja também afetam atributos de suas dimensões.
-IMPACTOS = {
-    "produto": """
-        SELECT ProductID id FROM #produto
-        UNION SELECT p.ProductID FROM Production.Product p
-            JOIN #subcategoria s ON s.ProductSubcategoryID=p.ProductSubcategoryID
-        UNION SELECT p.ProductID FROM Production.Product p
-            JOIN Production.ProductSubcategory s ON s.ProductSubcategoryID=p.ProductSubcategoryID
-            JOIN #categoria c ON c.ProductCategoryID=s.ProductCategoryID
-    """,
-    "cliente": """
-        SELECT CustomerID id FROM #cliente
-        UNION SELECT c.CustomerID FROM Sales.Customer c JOIN #pessoa p ON p.BusinessEntityID=c.PersonID
-        UNION SELECT c.CustomerID FROM Sales.Customer c JOIN #loja l ON l.BusinessEntityID=c.StoreID
-    """,
-    "territorio": "SELECT TerritoryID id FROM #territorio",
-    "vendedor": """
-        SELECT BusinessEntityID id FROM #vendedor
-        UNION SELECT s.BusinessEntityID FROM Sales.SalesPerson s JOIN #pessoa p ON p.BusinessEntityID=s.BusinessEntityID
-    """,
-}
-
-# Cada linha é um item; dados do cabeçalho se repetem entre itens do mesmo pedido.
-ITENS = """
-    SELECT h.SalesOrderID pedido_id, i.SalesOrderDetailID item_id,
-           CAST(h.OrderDate AS date) data_pedido, CAST(h.DueDate AS date) data_vencimento,
-           CAST(h.ShipDate AS date) data_envio, i.ProductID produto_id,
-           h.CustomerID cliente_id, COALESCE(h.TerritoryID,0) territorio_id,
-           COALESCE(h.SalesPersonID,0) vendedor_id, CAST(h.OnlineOrderFlag AS int) canal_sk,
-           h.Status status, i.OrderQty quantidade, i.UnitPrice preco_unitario,
-           i.UnitPriceDiscount taxa_desconto, i.LineTotal receita_liquida
-    FROM Sales.SalesOrderHeader h
-    JOIN Sales.SalesOrderDetail i ON i.SalesOrderID=h.SalesOrderID
-"""
 
 
 # Obtém credenciais do ambiente; mensagens de falha não mostram a senha.
 def conectar(database=None):
-    obrigatorias = (
-        "SOURCE_HOST",
-        "SOURCE_PORT",
-        "SOURCE_DB",
-        "SOURCE_USER",
-        "MSSQL_SA_PASSWORD",
-    )
+    obrigatorias = ("SOURCE_HOST", "SOURCE_PORT", "SOURCE_DB", "SOURCE_USER", "MSSQL_SA_PASSWORD")
     ausentes = [nome for nome in obrigatorias if not os.getenv(nome)]
     if ausentes:
         raise RuntimeError("Configuração SQL Server incompleta: " + ", ".join(ausentes))
@@ -110,17 +169,15 @@ def conectar(database=None):
             timeout=180,
         )
     except pymssql.Error:
-        raise RuntimeError(
-            "Não foi possível conectar ao SQL Server; confira a configuração."
-        ) from None
+        raise RuntimeError("Não foi possível conectar ao SQL Server; confira a configuração.") from None
 
 
-# O snapshot lê versões e dados em um estado consistente, mesmo com alterações concorrentes.
+# O snapshot lê versões e dados em um estado consistente, sem bloquear quem grava na origem.
 @contextmanager
 def snapshot():
     conn = conectar()
     try:
-        cur = conn.cursor(as_dict=True)
+        cur = conn.cursor()
         cur.execute("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRANSACTION;")
         yield cur
         cur.execute("COMMIT TRANSACTION;")
@@ -133,90 +190,61 @@ def snapshot():
         conn.close()
 
 
-# A retenção pode invalidar o checkpoint; identidade e versões impedem continuidade insegura.
-def estado(cur, anterior=None, identidade=None):
-    """Versão mínima, identidade e versão atual são lidas no mesmo snapshot."""
+def estado(cur, grupo, anterior=None, identidade=None):
+    """Versão atual e identidade das tabelas do grupo, conferidas contra o checkpoint."""
     inicios = []
-    for tabela, _ in TABELAS.values():
+    for tabela in GRUPOS[grupo]["tabelas"]:
         cur.execute(
-            """SELECT CHANGE_TRACKING_MIN_VALID_VERSION(OBJECT_ID(%s)) minimo,
-            (SELECT begin_version FROM sys.change_tracking_tables
-             WHERE object_id=OBJECT_ID(%s)) inicio""",
+            """SELECT CHANGE_TRACKING_MIN_VALID_VERSION(OBJECT_ID(%s)),
+                      (SELECT begin_version FROM sys.change_tracking_tables
+                       WHERE object_id = OBJECT_ID(%s))""",
             (tabela, tabela),
         )
-        row = cur.fetchone()
-        if row["minimo"] is None or row["inicio"] is None:
+        minimo, inicio = cur.fetchone()
+        if minimo is None or inicio is None:
+            raise RuntimeError("Change Tracking ausente. Execute prepare-source explicitamente.")
+        if anterior is not None and anterior < minimo:
             raise RuntimeError(
-                "Change Tracking ausente. Execute prepare-source explicitamente."
+                f"Checkpoint de {grupo} expirado. Avalie uma execução explícita com run --resync."
             )
-        if anterior is not None and anterior < row["minimo"]:
-            raise RuntimeError(
-                "Checkpoint expirado. Avalie uma execução explícita com run --resync."
-            )
-        inicios.append(str(row["inicio"]))
-    cur.execute("SELECT CHANGE_TRACKING_CURRENT_VERSION() versao")
-    versao = cur.fetchone()["versao"]
+        inicios.append(str(inicio))
+    cur.execute("SELECT CHANGE_TRACKING_CURRENT_VERSION()")
+    versao = cur.fetchone()[0]
     if versao is None or (anterior is not None and anterior > versao):
-        raise RuntimeError("Versão da origem incompatível com o checkpoint.")
+        raise RuntimeError(f"Versão da origem incompatível com o checkpoint de {grupo}.")
     cur.execute(
-        """SELECT CONVERT(nvarchar(128),value) epoca FROM sys.extended_properties
-        WHERE class=0 AND name=N'DWSourceEpoch'"""
+        """SELECT CONVERT(nvarchar(128), value) FROM sys.extended_properties
+           WHERE class = 0 AND name = N'DWSourceEpoch'"""
     )
     row = cur.fetchone()
     if row is None:
-        raise RuntimeError(
-            "Origem sem identificação. Execute prepare-source explicitamente."
-        )
-    atual = "|".join([row["epoca"], *inicios])
+        raise RuntimeError("Origem sem identificação. Execute prepare-source explicitamente.")
+    atual = "|".join([row[0], *inicios])
     if identidade is not None and atual != identidade:
-        raise RuntimeError(
-            "A identidade da origem mudou. Avalie run --resync explicitamente."
-        )
+        raise RuntimeError(f"A identidade da origem mudou ({grupo}). Avalie run --resync explicitamente.")
     return {"versao": versao, "identidade": atual}
 
 
-# Sem versão anterior lê tudo; com checkpoint, busca chaves alteradas via Change Tracking.
-def extrair(anterior=None, identidade=None):
+def extrair(grupo, anterior=None, identidade=None):
+    """Lê o grupo em um único snapshot. Sem checkpoint, lê todas as chaves."""
+    definicao = GRUPOS[grupo]
     with snapshot() as cur:
-        lote = {
-            **estado(cur, anterior, identidade),
-            "completo": anterior is None,
-            "dimensoes": {},
-            "afetados": {},
-            "mudancas": {},
-        }
-        # CT informa chaves afetadas; os valores atuais são consultados nas tabelas da origem.
-        if anterior is not None:
-            # Somente constantes do módulo formam identificadores SQL.
-            for nome, (tabela, chave) in TABELAS.items():
+        lote = estado(cur, grupo, anterior, identidade)
+        # 1. Chaves afetadas, sem duplicatas (MIN prioriza D < I < U).
+        for nome, colunas, completa, incremental in definicao["chaves"]:
+            if anterior is None:
                 cur.execute(
-                    f"SELECT {chave} INTO #{nome} FROM CHANGETABLE(CHANGES {tabela}, %s) ct",
-                    (anterior,),
+                    f"SELECT {colunas}, MIN(op) op INTO #{nome} FROM ({completa}) x GROUP BY {colunas}"
                 )
-                cur.execute(f"SELECT COUNT(*) n FROM #{nome}")
-                lote["mudancas"][nome] = cur.fetchone()["n"]
-        # Expande alterações indiretas para atualizar dimensões achatadas por SCD Tipo 1.
-        for nome, consulta in DIMENSOES.items():
-            if anterior is not None:
+            else:
                 cur.execute(
-                    f"SELECT id INTO #afetados_{nome} FROM ({IMPACTOS[nome]}) x"
+                    f"SELECT {colunas}, MIN(op) op INTO #{nome} FROM ({incremental}) x GROUP BY {colunas}",
+                    {"versao": anterior},
                 )
-                cur.execute(f"SELECT id FROM #afetados_{nome}")
-                lote["afetados"][nome] = [r["id"] for r in cur.fetchall()]
-                consulta = f"SELECT * FROM ({consulta}) d WHERE {nome}_id IN (SELECT id FROM #afetados_{nome})"
+        # 2. Linhas atuais dessas chaves, no formato da stage.
+        lote["tabelas"] = {}
+        for tabela, consulta in definicao["stage"].items():
             cur.execute(consulta)
-            lote["dimensoes"][nome] = list(cur.fetchall())
-        # Relê todos os itens dos pedidos afetados para reconhecer também exclusões no destino.
-        consulta = ITENS
-        if anterior is not None:
-            cur.execute(
-                "SELECT SalesOrderID INTO #pedidos FROM #pedido UNION SELECT SalesOrderID FROM #item"
-            )
-            cur.execute("SELECT SalesOrderID FROM #pedidos")
-            lote["pedidos"] = [r["SalesOrderID"] for r in cur.fetchall()]
-            consulta += " WHERE h.SalesOrderID IN (SELECT SalesOrderID FROM #pedidos)"
-        cur.execute(consulta)
-        lote["itens"] = list(cur.fetchall())
-        if anterior is None:
-            lote["pedidos"] = sorted({r["pedido_id"] for r in lote["itens"]})
-        return lote
+            colunas = [c[0] for c in cur.description]
+            lote["tabelas"][tabela] = (colunas, cur.fetchall())
+    return lote

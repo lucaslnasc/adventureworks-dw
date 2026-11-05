@@ -56,6 +56,7 @@ class "dw.dim_produto" as produto {
   subcategoria : text
   categoria : text
   ativo_origem : boolean
+  inferido : boolean
   atualizado_em : timestamptz
 }
 
@@ -65,6 +66,7 @@ class "dw.dim_cliente" as cliente {
   nome : text
   tipo : text
   ativo_origem : boolean
+  inferido : boolean
   atualizado_em : timestamptz
 }
 
@@ -75,6 +77,7 @@ class "dw.dim_territorio" as territorio {
   pais_codigo : text
   grupo : text
   ativo_origem : boolean
+  inferido : boolean
   atualizado_em : timestamptz
 }
 
@@ -83,6 +86,7 @@ class "dw.dim_vendedor" as vendedor {
   vendedor_id : integer [NK]
   nome : text
   ativo_origem : boolean
+  inferido : boolean
   atualizado_em : timestamptz
 }
 

@@ -1,6 +1,6 @@
 # Dicionário de dados — esquema `dw`
 
-Modelo estrela com uma tabela fato (`fato_venda`) e seis dimensões. Todas as dimensões usam SCD Tipo 1 (sobrescrita), chave substituta (`*_sk`) e chave natural da origem (`*_id`).
+Modelo estrela com uma tabela fato (`fato_venda`) e seis dimensões. Todas as dimensões usam SCD Tipo 1 (sobrescrita), chave substituta (`*_sk`) e chave natural da origem (`*_id`). Produto, cliente, território e vendedor têm ainda `ativo_origem` (falso quando o registro foi excluído na origem) e `inferido` (verdadeiro quando a linha foi criada pela carga da fato antes de a dimensão chegar; a próxima carga da dimensão a completa).
 
 ![Modelo estrela](img/modelo_estrela.png)
 
@@ -54,6 +54,7 @@ Dimensão de papel múltiplo (pedido, vencimento e envio). Gerada pelo ETL para 
 | subcategoria | text | Subcategoria (desnormalizada) | ProductSubcategory.Name |
 | categoria | text | Categoria (desnormalizada) | ProductCategory.Name |
 | ativo_origem | boolean | Falso se o registro foi excluído na origem | ETL |
+| inferido | boolean | Membro inferido, ainda sem os atributos da origem | ETL |
 | atualizado_em | timestamptz | Última atualização | ETL |
 
 ## dw.dim_cliente
@@ -64,7 +65,7 @@ Dimensão de papel múltiplo (pedido, vencimento e envio). Gerada pelo ETL para 
 | cliente_id | integer | Chave natural | Customer.CustomerID |
 | nome | text | Nome da loja ou da pessoa | Store.Name / Person.* |
 | tipo | text | `Loja`, `Pessoa` ou `Não informado` | Customer.StoreID / PersonID |
-| ativo_origem, atualizado_em | — | Controle do ETL | ETL |
+| ativo_origem, inferido, atualizado_em | — | Controle do ETL | ETL |
 
 ## dw.dim_territorio
 
@@ -75,7 +76,7 @@ Dimensão de papel múltiplo (pedido, vencimento e envio). Gerada pelo ETL para 
 | nome | text | Nome do território | SalesTerritory.Name |
 | pais_codigo | text | Código do país | SalesTerritory.CountryRegionCode |
 | grupo | text | Grupo geográfico | SalesTerritory.Group |
-| ativo_origem, atualizado_em | — | Controle do ETL | ETL |
+| ativo_origem, inferido, atualizado_em | — | Controle do ETL | ETL |
 
 ## dw.dim_vendedor
 
@@ -84,7 +85,7 @@ Dimensão de papel múltiplo (pedido, vencimento e envio). Gerada pelo ETL para 
 | vendedor_sk | bigint | Chave substituta (0 = sem vendedor, vendas online) | identidade |
 | vendedor_id | integer | Chave natural | SalesPerson.BusinessEntityID |
 | nome | text | Nome completo | Person.FirstName/MiddleName/LastName |
-| ativo_origem, atualizado_em | — | Controle do ETL | ETL |
+| ativo_origem, inferido, atualizado_em | — | Controle do ETL | ETL |
 
 ## dw.dim_canal
 
@@ -93,9 +94,23 @@ Dimensão de papel múltiplo (pedido, vencimento e envio). Gerada pelo ETL para 
 | canal_sk | smallint | 0 = Revendedor, 1 = Online |
 | nome | text | Nome do canal |
 
+## Esquema `stage` (área de preparação)
+
+Recebe da origem só os registros alterados, com os nomes de colunas do OLTP. Cada tabela é substituída a cada extração do seu grupo. `operacao`: `I` inserido, `U` alterado ou afetado por tabela relacionada, `D` excluído.
+
+| Tabela | Grupo | Origem | Colunas |
+|---|---|---|---|
+| stage.produto | produto | Product + ProductSubcategory + ProductCategory | operacao, product_id, name, product_number, color, subcategoria, categoria |
+| stage.cliente | cliente | Customer + Person + Store | operacao, customer_id, person_id, store_id, first_name, middle_name, last_name, store_name |
+| stage.territorio | territorio | SalesTerritory | operacao, territory_id, name, country_region_code, grupo |
+| stage.vendedor | vendedor | SalesPerson + Person | operacao, business_entity_id, first_name, middle_name, last_name |
+| stage.pedido | vendas | SalesOrderHeader | operacao, sales_order_id, order_date, due_date, ship_date, customer_id, territory_id, sales_person_id, online_order_flag, status |
+| stage.item | vendas | SalesOrderDetail | operacao, sales_order_id, sales_order_detail_id, product_id, order_qty, unit_price, unit_price_discount, line_total |
+| stage.lote | — | — | grupo, execucao_id, versao_de (nulo = carga completa), versao_ate, identidade_origem, linhas, extraido_em |
+
 ## Esquema `etl` (controle da carga incremental)
 
 | Tabela | Finalidade |
 |---|---|
-| etl.execucao | Auditoria de cada execução: modo (initial, incremental, resync), versões, estatísticas e erro |
-| etl.controle | Checkpoint: última versão do Change Tracking confirmada e identidade da origem |
+| etl.controle | Checkpoint por grupo: última versão do Change Tracking aplicada ao DW, identidade da origem e execução |
+| etl.carga | Auditoria: por execução e grupo, modo (completa ou incremental), faixa de versões, linhas na stage e linhas gravadas |

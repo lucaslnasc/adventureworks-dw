@@ -99,8 +99,8 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__DAGS_FOLDER: /app/dags
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      # Limita tarefas concorrentes; a configuração da DAG também governa suas execuções.
-      AIRFLOW__CORE__PARALLELISM: "1"
+      # Até 4 tarefas em paralelo; o pool origem_sqlserver limita os acessos à produção.
+      AIRFLOW__CORE__PARALLELISM: "4"
       AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "${AIRFLOW_USER:?Preencha AIRFLOW_USER no .env}:admin"
       AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/simple_auth_manager_passwords.json
       AIRFLOW__DAG_PROCESSOR__PARSING_PROCESSES: "1"

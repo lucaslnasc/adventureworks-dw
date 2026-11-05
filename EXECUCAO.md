@@ -56,9 +56,17 @@ docker compose run --rm etl run
 docker compose run --rm etl kpis
 ```
 
-O `up --wait` aguarda os bancos ficarem saudáveis. A sequência restaura a origem, habilita o Change Tracking, cria o DW, confere as pré-condições, carrega os dados e apresenta os dez indicadores. A restauração ignora um banco já existente. Não é necessário repetir essa preparação na rotina.
+O `up --wait` aguarda os bancos ficarem saudáveis. A sequência restaura a origem, habilita o Change Tracking, cria a stage e o DW, confere as pré-condições, carrega os dados (origem → stage → DW) e apresenta os dez indicadores. A restauração ignora um banco já existente. Não é necessário repetir essa preparação na rotina.
 
-O código Python está em `etl/`; os três scripts SQL estão em `sql/`. Os comandos Docker acima continuam sendo executados na raiz, onde fica `compose.yaml`.
+Se o DW foi criado pela versão anterior do projeto (sem a stage), o `init` recusa a estrutura antiga. Como o DW só guarda dados derivados da origem, recrie os esquemas e faça a carga inicial de novo:
+
+```powershell
+docker compose exec postgres psql -U dw -d adventureworks_dw -c "DROP SCHEMA IF EXISTS dw, etl, stage CASCADE"
+docker compose run --rm etl init
+docker compose run --rm etl run
+```
+
+O código Python está em `etl/`; os scripts SQL estão em `sql/` (estrutura na raiz, cargas em `sql/carga/`, validações em `sql/qualidade/`). Os comandos Docker acima continuam sendo executados na raiz, onde fica `compose.yaml`.
 
 ## 4. Executar a rotina incremental
 
@@ -71,7 +79,7 @@ docker compose run --rm etl run
 docker compose run --rm etl kpis
 ```
 
-`run` processa as mudanças desde o checkpoint. Se o Change Tracking indicar checkpoint expirado ou origem incompatível, interrompa e avalie a recuperação antes de continuar.
+`run` processa, em sequência, as mudanças desde o checkpoint de cada um dos cinco grupos (produto, cliente, território, vendedor e vendas). Se o Change Tracking indicar checkpoint expirado ou origem incompatível, interrompa e avalie a recuperação antes de continuar.
 
 ## 5. Executar pelo Airflow
 
@@ -92,7 +100,7 @@ docker compose --profile airflow up -d --force-recreate airflow
 
 As três senhas de banco são usadas na primeira inicialização dos volumes. Mudar esses valores no `.env` não altera as senhas dos bancos já existentes.
 
-Na interface, localize **adventureworks_simples**, ative a DAG e clique em **Trigger DAG** para disparar manualmente. Acompanhe as quatro tarefas: pré-condições, ETL incremental, validação e geração de evidências. Não é necessário executar `run` pelo terminal junto com a DAG.
+Na interface, localize **adventureworks_simples** e ative a DAG. Ela roda uma vez por dia (`@daily`) e também pode ser disparada em **Trigger DAG**. As 17 tarefas ficam em seis blocos: `preparacao`, `extracao` (origem → stage, limitada pelo pool `origem_sqlserver` de 2 vagas), `dimensoes`, `fato`, `qualidade` e `gerar_evidencias`. Na aba Grafo, use **Expandir todos os grupos** para ver as tarefas. Não é necessário executar `run` pelo terminal junto com a DAG.
 
 ### Connections usadas pela DAG
 

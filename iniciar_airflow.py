@@ -79,6 +79,10 @@ def main():
     try:
         subprocess.run(["airflow", "db", "migrate"], check=True,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Pool que protege a origem: no máximo duas extrações simultâneas no SQL Server.
+        subprocess.run(["airflow", "pools", "set", "origem_sqlserver", "2",
+                        "Leituras simultâneas permitidas no banco de produção"], check=True,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         registrar_conexoes()
     except Exception:
         raise SystemExit("Inicialização interrompida: confira metadados, Fernet e Connections. Credenciais omitidas.") from None
