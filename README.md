@@ -29,7 +29,8 @@ A origem só é lida no bloco de extração, com consultas curtas por chave prim
 | `sql/dw.sql` | Criação do Data Warehouse e do controle (checkpoint e auditoria) |
 | `sql/carga/*.sql` | Carga stage → DW: uma dimensão por arquivo e a fato |
 | `sql/qualidade/*.sql` | Validações executadas após a carga |
-| `sql/kpis.sql` | Dez indicadores em views SQL |
+| `sql/kpis.sql` | Dez indicadores: cada view é um SELECT direto sobre a fato e as dimensões |
+| `sql/analises.sql` | Consultas de análise por categoria, canal e ano |
 | `docs/modelo_estrela.puml` | Diagrama do modelo estrela (PlantUML) |
 | `docs/dicionario_dados.md` | Dicionário de dados (DW e stage) |
 | `docs/img/` | Diagrama e captura da DAG |
